@@ -13,7 +13,7 @@ public record User(String username, String fullName, String email) {
         }
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             throw new IllegalArgumentException(
-                "Юхер должен состоять из 3 до 20 символов, только из букв, цифр и подчеркиваний!"
+                "Юзер должен состоять из 3 до 20 символов, только из букв, цифр и подчеркиваний!"
             );
         }
         if (fullName == null || fullName.trim().isEmpty()) {
