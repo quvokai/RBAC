@@ -37,7 +37,7 @@ public record Permission(String name, String resource, String description) {
             Permission p = new Permission("read", "Users", "Просмотр списка пользователей");
             System.out.println(p.format());
 
-            Permission p2 = new Permission("Write ", "reports ", "Редактирование отчётов"); // пробелы → ошибка
+            Permission p2 = new Permission("Write ", "reports ", "Редактирование отчётов");
         } catch (IllegalArgumentException e) {
             System.out.println("Ошибка: " + e.getMessage());
         }
@@ -45,6 +45,6 @@ public record Permission(String name, String resource, String description) {
         Permission p3 = new Permission("DELETE", "settings", "Удаление настроек");
         System.out.println(p3.format());
 
-        System.out.println("Совпадает с 'del' и 'set': " + p3.matches("del", "set"));   // true
+        System.out.println("Совпадает с 'del' и 'set': " + p3.matches("del", "set"));   
     }
 }
