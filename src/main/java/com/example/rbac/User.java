@@ -9,23 +9,23 @@ public record User(String username, String fullName, String email) {
 
     public static User create(String username, String fullName, String email) {
         if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException("Username cannot be null or empty");
+            throw new IllegalArgumentException("Юзер не может быть пустым");
         }
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             throw new IllegalArgumentException(
-                "Username must be 3-20 characters, only letters, digits and underscore"
+                "Юхер должен состоять из 3 до 20 символов, только из букв, цифр и подчеркиваний!"
             );
         }
         if (fullName == null || fullName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Full name cannot be null or empty");
+            throw new IllegalArgumentException("Полное имя не можеи быть пустым");
         }
         if (email == null || email.trim().isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be null or empty");
+            throw new IllegalArgumentException("Почта не может быть пустой");
         }
         if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw new IllegalArgumentException("Invalid email format");
+            throw new IllegalArgumentException("Непральный формат почты");
         }
-
+ви
         return new User(username, fullName, email);
     }
 
