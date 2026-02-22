@@ -73,6 +73,10 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         return days + " дн. " + hours + " ч. осталось";
     }
 
+    public String getExpiresAt() {
+        return expiresAt;
+    }
+
     @Override
     public String summary() {
         return super.summary() + " | Expires: " + expiresAt + 
