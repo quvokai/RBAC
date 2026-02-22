@@ -1,0 +1,25 @@
+name: Java CI - Compile
+
+on:
+  push:
+    branches: [ dev, main, feature/* ]
+  pull_request:
+    branches: [ dev, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Compile project
+        run: |
+          find src/main/java -name "*.java" -print0 | xargs -0 javac
