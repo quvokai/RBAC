@@ -25,7 +25,7 @@ public record User(String username, String fullName, String email) {
         if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw new IllegalArgumentException("Непральный формат почты");
         }
-ви
+
         return new User(username, fullName, email);
     }
 
