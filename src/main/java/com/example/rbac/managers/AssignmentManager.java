@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
 
-    private final Map<String, RoleAssignment> assignments = new HashMap<>();  // ключ — assignmentId
+    private final Map<String, RoleAssignment> assignments = new HashMap<>();  
 
     @Override
     public void add(RoleAssignment assignment) {
@@ -17,7 +17,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             throw new IllegalArgumentException("Назначение с таким ID уже существует");
         }
 
-        // Проверка: одна активная роль не может быть назначена дважды
+      
         boolean duplicateActive = assignments.values().stream()
                 .filter(a -> a.user().equals(assignment.user()))
                 .filter(RoleAssignment::isActive)
@@ -112,7 +112,6 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         if (assignment instanceof PermanentAssignment) {
             ((PermanentAssignment) assignment).revoke();
         } else if (assignment instanceof TemporaryAssignment) {
-            // Для временного — делаем expired (можно установить дату в прошлом)
             ((TemporaryAssignment) assignment).extend("2000-01-01 00:00");
         }
     }
