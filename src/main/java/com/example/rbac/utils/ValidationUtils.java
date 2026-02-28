@@ -1,5 +1,11 @@
 package com.example.rbac.utils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+
 public class ValidationUtils {
 
     public static boolean isValidUsername(String username) {
@@ -12,9 +18,31 @@ public class ValidationUtils {
         return email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
     }
 
+  
     public static boolean isValidDate(String date) {
         if (date == null || date.trim().isEmpty()) return false;
-        return date.matches("^\\d{4}-\\d{2}-\\d{2}$") || date.matches("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$");
+
+        if (tryParse(date, "uuuu-MM-dd", false)) return true;
+        
+       
+        return tryParse(date, "uuuu-MM-dd HH:mm", true);
+    }
+
+    private static boolean tryParse(String value, String pattern, boolean hasTime) {
+        try {
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern)
+                    .withResolverStyle(ResolverStyle.STRICT);
+            
+            if (hasTime) {
+                LocalDateTime.parse(value, formatter);
+            } else {
+                LocalDate.parse(value, formatter);
+            }
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 
     public static String normalizeString(String input) {
