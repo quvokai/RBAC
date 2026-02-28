@@ -4,7 +4,7 @@ import com.example.rbac.managers.UserManager;
 import com.example.rbac.managers.AssignmentManager;
 import com.example.rbac.managers.RoleManager;
 import org.junit.jupiter.api.Test;
-from static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReportGeneratorTest {
 
