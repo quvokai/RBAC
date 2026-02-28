@@ -30,4 +30,4 @@ jobs:
         run: find src/test/java -name "*.java" -print0 | xargs -0 javac -cp src/main/java:junit.jar
 
       - name: Run tests
-        run: java -jar junit.jar --scan-classpath
+        run: java -jar junit.jar --classpath src/main/java:src/test/java --scan-classpath
