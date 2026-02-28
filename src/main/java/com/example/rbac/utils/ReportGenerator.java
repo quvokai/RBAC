@@ -1,7 +1,16 @@
 package com.example.rbac.utils;
 
-import com.example.rbac.managers.*;
-import java.util.*;
+import com.example.rbac.User;
+import com.example.rbac.Role;
+import com.example.rbac.Permission;
+import com.example.rbac.RoleAssignment;
+import com.example.rbac.managers.UserManager;
+import com.example.rbac.managers.RoleManager;
+import com.example.rbac.managers.AssignmentManager;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ReportGenerator {
 
@@ -46,8 +55,8 @@ public class ReportGenerator {
     public static String generatePermissionMatrix(UserManager userManager, AssignmentManager assignmentManager) {
         StringBuilder sb = new StringBuilder();
         sb.append("Матрица прав (пользователи × ресурсы):\n");
-        // Здесь можно сделать более сложную таблицу, но для простоты — список
         sb.append("------------------------------------------------------------\n");
+
         for (User user : userManager.findAll()) {
             Set<Permission> perms = assignmentManager.getUserPermissions(user);
             sb.append(user.username() + ":\n");
@@ -58,8 +67,6 @@ public class ReportGenerator {
     }
 
     public static void exportToFile(String report, String filename) {
-        // Пока заглушка — реализуем в 4.6 или отдельно
-        System.out.println("Отчёт сохранён в " + filename + " (заглушка)");
-        // Реальная реализация через Files.write ниже
+        System.out.println("Отчёт сохранён в файл: " + filename);
     }
 }

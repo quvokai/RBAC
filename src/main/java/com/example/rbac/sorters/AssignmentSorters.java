@@ -20,4 +20,3 @@ public class AssignmentSorters {
         return Comparator.comparing(a -> LocalDateTime.parse(a.metadata().assignedAt(), fmt));
     }
 }
-*
