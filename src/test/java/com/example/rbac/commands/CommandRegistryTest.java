@@ -1,6 +1,6 @@
 package com.example.rbac.commands;
 
-import com.example.rbac.RBACSystem;
+import com.example.rbac.commands.RBACSystem;
 import com.example.rbac.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
