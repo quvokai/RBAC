@@ -15,6 +15,9 @@ public class CommandRegistry {
         registerUtilityCommands(parser);
     }
 
+    // ==========================================
+    // УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ
+    // ==========================================
     private static void registerUserCommands(CommandParser parser) {
         
         parser.registerCommand("user-list", "Вывести список всех пользователей", (scanner, system) -> {
@@ -127,7 +130,9 @@ public class CommandRegistry {
         });
     }
 
-
+    // ==========================================
+    // УПРАВЛЕНИЕ РОЛЯМИ
+    // ==========================================
     private static void registerRoleCommands(CommandParser parser) {
 
         parser.registerCommand("role-list", "Вывести список всех ролей", (scanner, system) -> {
@@ -167,7 +172,7 @@ public class CommandRegistry {
         parser.registerCommand("role-view", "Просмотр роли", (scanner, system) -> {
             System.out.print("Введите имя роли: "); String name = scanner.nextLine();
             system.getRoleManager().findByName(name).ifPresentOrElse(r -> {
-
+                // Если в классе Role есть метод format(), используй его: System.out.println(r.format());
                 System.out.println("ID: " + r.getId() + "\nИмя: " + r.getName() + "\nОписание: " + r.getDescription());
                 System.out.println("Права:");
                 r.getPermissions().forEach(p -> System.out.println(" - " + p.name() + " on " + p.resource()));
@@ -183,7 +188,7 @@ public class CommandRegistry {
             System.out.print("Новое название: "); String newName = scanner.nextLine();
             System.out.print("Новое описание: "); String newDesc = scanner.nextLine();
             
-
+            // Предполагается наличие сеттеров в классе Role
             Role r = roleOpt.get();
             r.setName(newName.isEmpty() ? r.getName() : newName);
             r.setDescription(newDesc.isEmpty() ? r.getDescription() : newDesc);
@@ -267,7 +272,9 @@ public class CommandRegistry {
         });
     }
 
-
+    // ==========================================
+    // УПРАВЛЕНИЕ НАЗНАЧЕНИЯМИ
+    // ==========================================
     private static void registerAssignmentCommands(CommandParser parser) {
 
         parser.registerCommand("assign-role", "Назначить роль пользователю", (scanner, system) -> {
@@ -386,14 +393,17 @@ public class CommandRegistry {
         });
     }
 
-
+    // ==========================================
+    // ПРОСМОТР ПРАВ
+    // ==========================================
     private static void registerPermissionCommands(CommandParser parser) {
         
         parser.registerCommand("permissions-user", "Все права пользователя", (scanner, system) -> {
             System.out.print("Username: "); String un = scanner.nextLine();
             system.getUserManager().findByUsername(un).ifPresentOrElse(u -> {
                 Set<Permission> perms = system.getAssignmentManager().getUserPermissions(u);
-
+                
+                // Группировка по ресурсам
                 Map<String, List<Permission>> grouped = perms.stream()
                         .collect(Collectors.groupingBy(Permission::resource));
                 
@@ -416,7 +426,9 @@ public class CommandRegistry {
         });
     }
 
-
+    // ==========================================
+    // СЛУЖЕБНЫЕ КОМАНДЫ
+    // ==========================================
     private static void registerUtilityCommands(CommandParser parser) {
         
         parser.registerCommand("help", "Справка по командам", (scanner, system) -> {
@@ -435,19 +447,21 @@ public class CommandRegistry {
 
         parser.registerCommand("save", "Сохранить данные", (scanner, system) -> {
             System.out.println("Сохранение данных в JSON (Заглушка. Здесь реализуется логика сериализации).");
-
+            // File I/O logic goes here
             System.out.println("Данные успешно сохранены.");
         });
 
         parser.registerCommand("load", "Загрузить данные", (scanner, system) -> {
             System.out.println("Чтение данных из файла (Заглушка. Здесь реализуется логика десериализации).");
+            // File I/O logic goes here
             System.out.println("Данные загружены.");
         });
 
         parser.registerCommand("exit", "Выход из программы", (scanner, system) -> {
             System.out.print("Желаете сохранить данные перед выходом? (да/нет): ");
             if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
-                System.out.println("Сохранение..."); 
+                System.out.println("Сохранение..."); // Вызов логики save
+            }
             System.out.print("Точно выйти? (да/нет): ");
             if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
                 System.out.println("Завершение работы системы. До свидания!");
