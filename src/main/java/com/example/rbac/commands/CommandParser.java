@@ -1,6 +1,5 @@
 package com.example.rbac.commands;
 
-import com.example.rbac.system.RBACSystem;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;

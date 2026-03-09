@@ -15,9 +15,6 @@ public class CommandRegistry {
         registerUtilityCommands(parser);
     }
 
-    // ==========================================
-    // УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ
-    // ==========================================
     private static void registerUserCommands(CommandParser parser) {
         
         parser.registerCommand("user-list", "Вывести список всех пользователей", (scanner, system) -> {
