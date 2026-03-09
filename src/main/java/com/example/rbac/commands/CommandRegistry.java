@@ -127,9 +127,6 @@ public class CommandRegistry {
         });
     }
 
-    // ==========================================
-    // УПРАВЛЕНИЕ РОЛЯМИ
-    // ==========================================
     private static void registerRoleCommands(CommandParser parser) {
 
         parser.registerCommand("role-list", "Вывести список всех ролей", (scanner, system) -> {
@@ -201,26 +198,38 @@ public class CommandRegistry {
     System.out.println("Роль обновлена.");
 });
 
-        parser.registerCommand("role-delete", "Удалить роль", (scanner, system) -> {
-            System.out.print("Введите имя роли: "); String name = scanner.nextLine();
-            Optional<Role> roleOpt = system.getRoleManager().findByName(name);
-            if (roleOpt.isEmpty()) return;
-            
-            Role role = roleOpt.get();
-            List<RoleAssignment> assignments = system.getAssignmentManager().findByRole(role);
-            
-            if (!assignments.isEmpty()) {
-                System.out.println("ВНИМАНИЕ! Эта роль назначена следующим пользователям:");
-                assignments.forEach(a -> System.out.println("- " + a.user().username()));
-            }
-            
-            System.out.print("Вы уверены, что хотите удалить роль? (да/нет): ");
-            if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
-                assignments.forEach(system.getAssignmentManager()::remove);
-                system.getRoleManager().remove(role);
-                System.out.println("Роль и все её назначения удалены.");
-            }
-        });
+       parser.registerCommand("role-delete", "Удалить роль", (scanner, system) -> {
+    System.out.print("Введите имя роли: "); 
+    // Используем trim(), чтобы пробелы или пустые переносы не ломали поиск
+    String name = scanner.nextLine().trim(); 
+    
+    Optional<Role> roleOpt = system.getRoleManager().findByName(name);
+    if (roleOpt.isEmpty()) {
+        System.out.println("Роль не найдена.");
+        return;
+    }
+    
+    Role role = roleOpt.get();
+    List<RoleAssignment> assignments = system.getAssignmentManager().findByRole(role);
+    
+    if (!assignments.isEmpty()) {
+        System.out.println("ВНИМАНИЕ! Эта роль назначена следующим пользователям:");
+        assignments.forEach(a -> System.out.println("- " + a.user().username()));
+    }
+    
+    System.out.print("Вы уверены, что хотите удалить роль? (да/нет): ");
+    String confirmation = scanner.nextLine().trim();
+    
+    if (confirmation.equalsIgnoreCase("да")) {
+        
+        assignments.forEach(system.getAssignmentManager()::remove);
+      
+        system.getRoleManager().remove(role);
+        System.out.println("Роль и все её назначения удалены.");
+    } else {
+        System.out.println("Удаление отменено.");
+    }
+});
 
         parser.registerCommand("role-add-permission", "Добавить право к роли", (scanner, system) -> {
             System.out.print("Имя роли: "); String rName = scanner.nextLine();

@@ -37,7 +37,7 @@ public class RBACSystem {
         Permission deleteUsers = new Permission("DELETE", "users", "Удаление пользователей");
         Permission readReports = new Permission("READ", "reports", "Просмотр отчётов");
 
-        Role admin = new Role("Administrator", "Полный доступ к системе");
+        Role admin = new Role("Admin", "Полный доступ к системе");
         admin.addPermission(readUsers);
         admin.addPermission(writeUsers);
         admin.addPermission(deleteUsers);
