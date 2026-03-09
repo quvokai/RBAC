@@ -20,20 +20,10 @@ public class CommandRegistry {
         registerUtilityCommands(parser, system);
     }
 
-    // ==========================================
-    // КОМАНДЫ ПОЛЬЗОВАТЕЛЕЙ
-    // ==========================================
+    // ====================== ПОЛЬЗОВАТЕЛИ ======================
     private static void registerUserCommands(CommandParser parser, RBACSystem system) {
-
-        parser.registerCommand("user-list", "Показать всех пользователей", (sc, sys) -> {
-            List<User> users = sys.getUserManager().findAll();
-            if (users.isEmpty()) {
-                System.out.println("Пользователей пока нет.");
-                return;
-            }
-            System.out.printf("%-15s | %-25s | %-30s%n", "Username", "Full Name", "Email");
-            System.out.println("-".repeat(75));
-            users.forEach(u -> System.out.printf("%-15s | %-25s | %-30s%n", u.username(), u.fullName(), u.email()));
+        parser.registerCommand("user-list", "Список всех пользователей", (sc, sys) -> {
+            sys.getUserManager().findAll().forEach(u -> System.out.println(u.format()));
         });
 
         parser.registerCommand("user-create", "Создать пользователя", (sc, sys) -> {
@@ -44,83 +34,40 @@ public class CommandRegistry {
             try {
                 User user = User.create(username, fullName, email);
                 sys.getUserManager().add(user);
-                sys.getAuditLog().log("USER_CREATE", sys.getCurrentUser(), username, "Создан новый пользователь");
-                System.out.println("✅ Пользователь успешно создан!");
+                System.out.println("✅ Пользователь создан: " + user.format());
             } catch (Exception e) {
-                System.out.println("❌ Ошибка: " + e.getMessage());
+                System.out.println("❌ " + e.getMessage());
             }
         });
 
-        parser.registerCommand("user-view", "Просмотреть пользователя", (sc, sys) -> {
+        parser.registerCommand("user-view", "Просмотр пользователя", (sc, sys) -> {
             String username = ConsoleUtils.promptString(sc, "Username", true);
             sys.getUserManager().findByUsername(username).ifPresentOrElse(user -> {
-                System.out.println("=== Информация о пользователе ===");
-                System.out.println("Username : " + user.username());
+                System.out.println("Username: " + user.username());
                 System.out.println("Full Name: " + user.fullName());
-                System.out.println("Email    : " + user.email());
-
-                System.out.println("\n--- Назначенные роли ---");
-                sys.getAssignmentManager().findByUser(user).forEach(a ->
-                    System.out.println(" • " + a.role().getName() + " [" + (a.isActive() ? "активна" : "неактивна") + "]")
-                );
+                System.out.println("Email: " + user.email());
+                System.out.println("\nРоли:");
+                sys.getAssignmentManager().findByUser(user)
+                        .forEach(a -> System.out.println(" • " + a.role().getName()));
             }, () -> System.out.println("❌ Пользователь не найден."));
-        });
-
-        parser.registerCommand("user-update", "Обновить пользователя", (sc, sys) -> {
-            String username = ConsoleUtils.promptString(sc, "Username", true);
-            if (!sys.getUserManager().exists(username)) {
-                System.out.println("❌ Пользователь не найден.");
-                return;
-            }
-            String newFullName = ConsoleUtils.promptString(sc, "Новое полное имя", true);
-            String newEmail = ConsoleUtils.promptString(sc, "Новый Email", true);
-
-            try {
-                sys.getUserManager().update(username, newFullName, newEmail);
-                System.out.println("✅ Данные обновлены.");
-            } catch (Exception e) {
-                System.out.println("❌ Ошибка: " + e.getMessage());
-            }
         });
 
         parser.registerCommand("user-delete", "Удалить пользователя", (sc, sys) -> {
             String username = ConsoleUtils.promptString(sc, "Username", true);
-            if (!sys.getUserManager().exists(username)) {
+            if (sys.getUserManager().findByUsername(username).isEmpty()) {
                 System.out.println("❌ Пользователь не найден.");
                 return;
             }
-            if (ConsoleUtils.promptYesNo(sc, "Вы уверены, что хотите удалить пользователя " + username + "?")) {
+            if (ConsoleUtils.promptYesNo(sc, "Удалить пользователя " + username + "?")) {
                 User user = sys.getUserManager().findByUsername(username).get();
                 sys.getAssignmentManager().findByUser(user).forEach(sys.getAssignmentManager()::remove);
                 sys.getUserManager().remove(user);
-                System.out.println("✅ Пользователь и его назначения удалены.");
+                System.out.println("✅ Пользователь удалён.");
             }
-        });
-
-        parser.registerCommand("user-search", "Поиск пользователей", (sc, sys) -> {
-            System.out.println("1. По username\n2. По email\n3. По домену\n4. По имени");
-            String choice = ConsoleUtils.promptString(sc, "Выберите фильтр", true);
-
-            String query = ConsoleUtils.promptString(sc, "Строка поиска", true).toLowerCase();
-
-            List<User> result = sys.getUserManager().findAll().stream().filter(u -> {
-                switch (choice) {
-                    case "1": return u.username().toLowerCase().contains(query);
-                    case "2": return u.email().toLowerCase().contains(query);
-                    case "3": return u.email().toLowerCase().endsWith(query);
-                    case "4": return u.fullName().toLowerCase().contains(query);
-                    default: return false;
-                }
-            }).toList();
-
-            if (result.isEmpty()) System.out.println("Ничего не найдено.");
-            else result.forEach(u -> System.out.println("• " + u.username() + " (" + u.email() + ")"));
         });
     }
 
-    // ==========================================
-    // КОМАНДЫ РОЛЕЙ
-    // ==========================================
+    // ====================== РОЛИ ======================
     private static void registerRoleCommands(CommandParser parser, RBACSystem system) {
         parser.registerCommand("role-list", "Список ролей", (sc, sys) -> {
             sys.getRoleManager().findAll().forEach(r -> System.out.println(r.format()));
@@ -129,7 +76,6 @@ public class CommandRegistry {
         parser.registerCommand("role-create", "Создать роль", (sc, sys) -> {
             String name = ConsoleUtils.promptString(sc, "Название роли", true);
             String desc = ConsoleUtils.promptString(sc, "Описание", false);
-
             Role role = new Role(name, desc);
             sys.getRoleManager().add(role);
             System.out.println("✅ Роль создана: " + name);
@@ -144,9 +90,8 @@ public class CommandRegistry {
             }
             Role role = roleOpt.get();
 
-            List<RoleAssignment> assignments = sys.getAssignmentManager().findByRole(role);
-            if (!assignments.isEmpty()) {
-                System.out.println("⚠️ Роль назначена пользователям! Удаление невозможно.");
+            if (!sys.getAssignmentManager().findByRole(role).isEmpty()) {
+                System.out.println("⚠️ Роль назначена пользователям! Удаление запрещено.");
                 return;
             }
 
@@ -158,7 +103,7 @@ public class CommandRegistry {
 
         parser.registerCommand("role-add-permission", "Добавить право к роли", (sc, sys) -> {
             String roleName = ConsoleUtils.promptString(sc, "Имя роли", true);
-            String pName = ConsoleUtils.promptString(sc, "Название права (READ/WRITE...)", true);
+            String pName = ConsoleUtils.promptString(sc, "Название права", true);
             String pResource = ConsoleUtils.promptString(sc, "Ресурс", true);
             String pDesc = ConsoleUtils.promptString(sc, "Описание", false);
 
@@ -168,9 +113,7 @@ public class CommandRegistry {
         });
     }
 
-    // ==========================================
-    // КОМАНДЫ НАЗНАЧЕНИЙ
-    // ==========================================
+    // ====================== НАЗНАЧЕНИЯ ======================
     private static void registerAssignmentCommands(CommandParser parser, RBACSystem system) {
         parser.registerCommand("assign-role", "Назначить роль", (sc, sys) -> {
             String username = ConsoleUtils.promptString(sc, "Username", true);
@@ -197,36 +140,55 @@ public class CommandRegistry {
 
         parser.registerCommand("revoke-role", "Отозвать роль", (sc, sys) -> {
             String username = ConsoleUtils.promptString(sc, "Username", true);
-            var assignments = sys.getAssignmentManager().findByUser(
-                    sys.getUserManager().findByUsername(username).orElse(null));
+            var userOpt = sys.getUserManager().findByUsername(username);
+            if (userOpt.isEmpty()) return;
 
-            if (assignments.isEmpty()) {
+            var assigns = sys.getAssignmentManager().findByUser(userOpt.get())
+                    .stream().filter(RoleAssignment::isActive).toList();
+
+            if (assigns.isEmpty()) {
                 System.out.println("Нет активных назначений.");
                 return;
             }
 
-            System.out.println("Активные назначения:");
-            for (int i = 0; i < assignments.size(); i++) {
-                System.out.println((i+1) + ". " + assignments.get(i).role().getName());
+            for (int i = 0; i < assigns.size(); i++) {
+                System.out.println((i+1) + ". " + assigns.get(i).role().getName());
             }
 
-            int choice = ConsoleUtils.promptInt(sc, "Номер для отзыва", 1, assignments.size());
-            sys.getAssignmentManager().revokeAssignment(assignments.get(choice-1).assignmentId());
+            int idx = ConsoleUtils.promptInt(sc, "Номер для отзыва", 1, assigns.size()) - 1;
+            sys.getAssignmentManager().revokeAssignment(assigns.get(idx).assignmentId());
             System.out.println("✅ Назначение отозвано.");
         });
     }
 
-    // ==========================================
-    // СЛУЖЕБНЫЕ КОМАНДЫ
-    // ==========================================
+    // ====================== ПРОСМОТР ПРАВ ======================
+    private static void registerPermissionCommands(CommandParser parser, RBACSystem system) {
+        parser.registerCommand("permissions-user", "Все права пользователя", (sc, sys) -> {
+            String username = ConsoleUtils.promptString(sc, "Username", true);
+            sys.getUserManager().findByUsername(username).ifPresentOrElse(user -> {
+                Set<Permission> perms = sys.getAssignmentManager().getUserPermissions(user);
+                perms.forEach(p -> System.out.println("• " + p.format()));
+            }, () -> System.out.println("❌ Пользователь не найден."));
+        });
+
+        parser.registerCommand("permissions-check", "Проверить право", (sc, sys) -> {
+            String username = ConsoleUtils.promptString(sc, "Username", true);
+            String permName = ConsoleUtils.promptString(sc, "Название права", true);
+            String resource = ConsoleUtils.promptString(sc, "Ресурс", true);
+
+            boolean has = sys.getAssignmentManager().userHasPermission(
+                    sys.getUserManager().findByUsername(username).orElse(null), permName, resource);
+
+            System.out.println(has ? "✅ Доступ разрешён" : "❌ Доступ запрещён");
+        });
+    }
+
+    // ====================== СЛУЖЕБНЫЕ ======================
     private static void registerUtilityCommands(CommandParser parser, RBACSystem system) {
         parser.registerCommand("help", "Справка", (sc, sys) -> parser.printHelp());
         parser.registerCommand("stats", "Статистика", (sc, sys) -> System.out.println(sys.generateStatistics()));
         parser.registerCommand("exit", "Выход", (sc, sys) -> {
-            if (ConsoleUtils.promptYesNo(sc, "Выйти из программы?")) {
-                System.out.println("До свидания!");
-                System.exit(0);
-            }
+            if (ConsoleUtils.promptYesNo(sc, "Выйти из программы?")) System.exit(0);
         });
     }
 }
