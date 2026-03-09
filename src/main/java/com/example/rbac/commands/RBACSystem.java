@@ -1,4 +1,4 @@
-package com.example.rbac.system;
+package com.example.rbac.commands;
 
 import com.example.rbac.managers.*;
 import com.example.rbac.utils.AuditLog;
