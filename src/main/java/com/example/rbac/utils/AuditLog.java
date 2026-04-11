@@ -4,13 +4,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class AuditLog {
 
+    private final BlockingQueue<AuditEntry> queue = new LinkedBlockingQueue<>();
     private final List<AuditEntry> entries = new ArrayList<>();
+    private final Thread workerThread;
+    private volatile boolean running = true;
 
-    public static record AuditEntry(
+    public record AuditEntry(
             String timestamp,
             String action,
             String performer,
@@ -18,38 +22,67 @@ public class AuditLog {
             String details
     ) {}
 
+    public AuditLog() {
+        workerThread = new Thread(this::processQueue, "AuditLog-Worker");
+        workerThread.setDaemon(true);
+        workerThread.start();
+    }
+
     public void log(String action, String performer, String target, String details) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        entries.add(new AuditEntry(timestamp, action, performer, target, details));
+        queue.offer(new AuditEntry(timestamp, action, performer, target, details));
+    }
+
+    private void processQueue() {
+        while (running) {
+            try {
+                AuditEntry entry = queue.take();
+                synchronized (entries) {
+                    entries.add(entry);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
     }
 
     public List<AuditEntry> getAll() {
-        return new ArrayList<>(entries);
+        synchronized (entries) {
+            return new ArrayList<>(entries);
+        }
     }
 
     public List<AuditEntry> getByPerformer(String performer) {
-        return entries.stream()
-                .filter(e -> e.performer().equals(performer))
-                .collect(Collectors.toList());
+        synchronized (entries) {
+            return entries.stream()
+                    .filter(e -> e.performer().equals(performer))
+                    .toList();
+        }
     }
 
     public List<AuditEntry> getByAction(String action) {
-        return entries.stream()
-                .filter(e -> e.action().equals(action))
-                .collect(Collectors.toList());
+        synchronized (entries) {
+            return entries.stream()
+                    .filter(e -> e.action().equals(action))
+                    .toList();
+        }
     }
 
     public void printLog() {
-        if (entries.isEmpty()) {
-            System.out.println("Журнал аудита пуст.");
-            return;
+        synchronized (entries) {
+            if (entries.isEmpty()) {
+                System.out.println("Журнал аудита пуст.");
+                return;
+            }
+            System.out.println("=== Журнал аудита ===");
+            entries.forEach(e -> System.out.printf("%s | %-12s | %-10s | %s%n",
+                    e.timestamp(), e.action(), e.performer(), e.details()));
         }
-        System.out.println("Журнал аудита:");
-        System.out.println("------------------------------------------------------------");
-        for (AuditEntry e : entries) {
-            System.out.printf("%s | %-15s | %-10s | %-20s | %s%n",
-                    e.timestamp(), e.action(), e.performer(), e.target(), e.details());
-        }
-        System.out.println("------------------------------------------------------------");
+    }
+
+    public void shutdown() {
+        running = false;
+        workerThread.interrupt();
     }
 }
