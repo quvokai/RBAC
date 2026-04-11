@@ -1,8 +1,10 @@
-package com.example.rbac.commands;
-
 import com.example.rbac.*;
-import com.example.rbac.filters.*;
+import com.example.rbac.commands.CommandParser;
+import com.example.rbac.commands.RBACSystem;
+import com.example.rbac.utils.BackgroundExecutor;
+import com.example.rbac.utils.ReportGenerator;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class CommandRegistry {
@@ -13,6 +15,7 @@ public class CommandRegistry {
         registerAssignmentCommands(parser);
         registerPermissionCommands(parser);
         registerUtilityCommands(parser);
+        registerAsyncCommands(parser);
     }
 
     private static void registerUserCommands(CommandParser parser) {
@@ -488,16 +491,133 @@ public class CommandRegistry {
             System.out.println("Данные загружены.");
         });
 
+        parser.registerCommand("report-users-async", "Сгенерировать отчёт по пользователям в фоне", (scanner, system) -> {
+            System.out.println("[ASYNC] Запуск генерации отчёта в фоновом потоке...");
+            system.getAuditLog().log("REPORT_ASYNC_START", system.getCurrentUser(), "ReportGenerator", "Запуск фоновой генерации отчёта");
+            system.getBackgroundExecutor().submitAsync(() -> {
+                try {
+                    String report = com.example.rbac.utils.ReportGenerator
+                            .generateUserReportParallel(system.getUserManager(), system.getAssignmentManager());
+                    System.out.println("\n[ASYNC] Отчёт готов:\n" + report);
+                    system.getAuditLog().log("REPORT_ASYNC_DONE", system.getCurrentUser(), "ReportGenerator", "Отчёт успешно сгенерирован");
+                } catch (Exception e) {
+                    System.out.println("[ASYNC] Ошибка при генерации отчёта: " + e.getMessage());
+                }
+            });
+            System.out.println("[ASYNC] Задача поставлена в очередь. Продолжайте работу.");
+        });
+
+        parser.registerCommand("save-async", "Сохранить данные в фоне", (scanner, system) -> {
+            System.out.print("Имя файла для сохранения (Enter = rbac_data.json): ");
+            String fileName = scanner.nextLine().trim();
+            if (fileName.isEmpty()) fileName = "rbac_data.json";
+            final String finalFileName = fileName;
+            System.out.println("[ASYNC] Сохранение в файл '" + finalFileName + "' запущено в фоне...");
+            system.getAuditLog().log("SAVE_ASYNC_START", system.getCurrentUser(), finalFileName, "Фоновое сохранение запущено");
+            system.getBackgroundExecutor().submitAsync(() -> {
+                try {
+                    // Снимаем снимок данных
+                    String report = system.generateStatistics()
+                            + "\n" + com.example.rbac.utils.ReportGenerator
+                                .generateUserReportParallel(system.getUserManager(), system.getAssignmentManager())
+                            + "\n" + com.example.rbac.utils.ReportGenerator
+                                .generatePermissionMatrixParallel(system.getUserManager(), system.getAssignmentManager());
+                    com.example.rbac.utils.ReportGenerator.exportToFile(report, finalFileName);
+                    System.out.println("[ASYNC] Данные сохранены в файл: " + finalFileName);
+                    system.getAuditLog().log("SAVE_ASYNC_DONE", system.getCurrentUser(), finalFileName, "Данные успешно сохранены");
+                } catch (Exception e) {
+                    System.out.println("[ASYNC] Ошибка при сохранении: " + e.getMessage());
+                }
+            });
+            System.out.println("[ASYNC] Задача поставлена в очередь.");
+        });
+
         parser.registerCommand("exit", "Выход из программы", (scanner, system) -> {
             System.out.print("Желаете сохранить данные перед выходом? (да/нет): ");
             if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
-                System.out.println("Сохранение..."); // Вызов логики save
+                System.out.println("Сохранение...");
             }
             System.out.print("Точно выйти? (да/нет): ");
             if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
+                system.shutdown();
                 System.out.println("Завершение работы системы. До свидания!");
                 System.exit(0);
             }
         });
+    }
+
+    // ==========================================
+    // АСИНХРОННЫЕ КОМАНДЫ
+    // ==========================================
+    private static void registerAsyncCommands(CommandParser parser) {
+
+        // Генерация отчёта по пользователям в отдельном потоке
+        parser.registerCommand("report-users-async",
+                "Запустить генерацию отчёта по пользователям в фоне",
+                (scanner, system) -> {
+                    System.out.println("[ASYNC] Запуск генерации отчёта в фоновом потоке...");
+                    system.getAuditLog().log("REPORT_ASYNC_START", system.getCurrentUser(),
+                            "ReportGenerator", "Запущена асинхронная генерация отчёта по пользователям");
+
+                    Future<String> future = system.getBackgroundExecutor().submit(() -> {
+                        // Имитация долгой операции для наглядности
+                        Thread.sleep(500);
+                        return ReportGenerator.generateUserReport(
+                                system.getUserManager(),
+                                system.getAssignmentManager()
+                        );
+                    });
+
+                    // Ожидание и вывод — тоже в фоне, чтобы не блокировать CLI
+                    system.getBackgroundExecutor().awaitAndPrint(future, "Отчёт по пользователям", 10_000);
+                    System.out.println("[ASYNC] Задача поставлена в очередь. Результат появится автоматически.");
+                    system.getAuditLog().log("REPORT_ASYNC_QUEUED", system.getCurrentUser(),
+                            "ReportGenerator", "Задача генерации отчёта поставлена в очередь");
+                });
+
+        // Сохранение данных в фоне
+        parser.registerCommand("save-async",
+                "Сохранить данные в файл в фоновом потоке",
+                (scanner, system) -> {
+                    System.out.print("Имя файла для сохранения (Enter — rbac_data.json): ");
+                    String rawName = scanner.nextLine().trim();
+                    String filename = rawName.isEmpty() ? "rbac_data.json" : rawName;
+
+                    System.out.println("[ASYNC] Запуск сохранения в фоновом потоке...");
+                    system.getAuditLog().log("SAVE_ASYNC_START", system.getCurrentUser(),
+                            filename, "Запущено асинхронное сохранение данных");
+
+                    Future<String> future = system.getBackgroundExecutor().submit(() -> {
+                        // Снимаем снапшот данных в вызывающем потоке, чтобы минимизировать окно блокировки
+                        int users   = system.getUserManager().count();
+                        int roles   = system.getRoleManager().count();
+                        int assigns = system.getAssignmentManager().count();
+
+                        // Имитация I/O-операции
+                        Thread.sleep(300);
+
+                        // Здесь будет реальная сериализация (JSON и т.д.)
+                        ReportGenerator.exportToFile(
+                                system.generateStatistics(), filename
+                        );
+
+                        return String.format("Сохранено в '%s': %d пользователей, %d ролей, %d назначений.",
+                                filename, users, roles, assigns);
+                    });
+
+                    system.getBackgroundExecutor().awaitAndPrint(future, "Сохранение данных", 15_000);
+                    System.out.println("[ASYNC] Задача сохранения поставлена в очередь.");
+                });
+
+        // Просмотр статистики асинхронно (полезно при большом объёме данных)
+        parser.registerCommand("stats-async",
+                "Показать статистику системы в фоновом потоке",
+                (scanner, system) -> {
+                    System.out.println("[ASYNC] Сбор статистики запущен в фоне...");
+                    Future<String> future = system.getBackgroundExecutor().submit(
+                            system::generateStatistics
+                    );
+                    system.getBackgroundExecutor().awaitAndPrint(future, "Статистика системы", 5_000);
+                });
     }
 }
