@@ -52,4 +52,7 @@ public class AuditLog {
         }
         System.out.println("------------------------------------------------------------");
     }
+     public void shutdown() {
+        System.out.println("[AuditLog] Аудит-лог остановлен.");
+    }
 }
