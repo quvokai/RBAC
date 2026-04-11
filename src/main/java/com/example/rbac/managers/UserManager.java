@@ -3,16 +3,19 @@ package com.example.rbac.managers;
 import com.example.rbac.User;
 import com.example.rbac.filters.UserFilter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class UserManager implements Repository<User> {
 
-    private final Map<String, User> users = new HashMap<>();  // ключ — username
+    private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
 
     @Override
     public void add(User user) {
-        if (user == null) throw new IllegalArgumentException("User не может быть null");
-        if (exists(user.username())) throw new IllegalArgumentException("Пользователь с таким username уже существует");
+        if (user == null) throw new IllegalArgumentException("User cannot be null");
+        if (users.containsKey(user.username())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
         users.put(user.username(), user);
     }
 
@@ -24,7 +27,6 @@ public class UserManager implements Repository<User> {
 
     @Override
     public Optional<User> findById(String id) {
-        // username используется как id
         return Optional.ofNullable(users.get(id));
     }
 
@@ -62,9 +64,7 @@ public class UserManager implements Repository<User> {
 
     public List<User> findAll(UserFilter filter, Comparator<User> sorter) {
         List<User> result = findByFilter(filter);
-        if (sorter != null) {
-            result.sort(sorter);
-        }
+        if (sorter != null) result.sort(sorter);
         return result;
     }
 
@@ -74,21 +74,8 @@ public class UserManager implements Repository<User> {
 
     public void update(String username, String newFullName, String newEmail) {
         User existing = users.get(username);
-        if (existing == null) throw new IllegalArgumentException("Пользователь не найден");
+        if (existing == null) throw new IllegalArgumentException("User not found");
         User updated = User.create(username, newFullName, newEmail);
         users.put(username, updated);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UserManager that = (UserManager) o;
-        return users.equals(that.users);
-    }
-
-    @Override
-    public int hashCode() {
-        return users.hashCode();
     }
 }

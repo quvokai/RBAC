@@ -1,29 +1,33 @@
 package com.example.rbac.managers;
 
-import com.example.rbac.filters.AssignmentFilters;
 import com.example.rbac.*;
 import com.example.rbac.filters.AssignmentFilter;
+import com.example.rbac.filters.AssignmentFilters;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
 
-    private final Map<String, RoleAssignment> assignments = new HashMap<>();  
+    private final ConcurrentHashMap<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
 
     @Override
     public void add(RoleAssignment assignment) {
-        if (assignment == null) throw new IllegalArgumentException("Назначение не может быть null");
+        if (assignment == null) throw new IllegalArgumentException("Assignment cannot be null");
+
         if (assignments.containsKey(assignment.assignmentId())) {
-            throw new IllegalArgumentException("Назначение с таким ID уже существует");
+            throw new IllegalArgumentException("Assignment ID already exists");
         }
 
-      
-        boolean duplicateActive = assignments.values().stream()
+        // Проверка дублирования активной роли
+        boolean duplicate = assignments.values().stream()
                 .filter(a -> a.user().equals(assignment.user()))
                 .filter(RoleAssignment::isActive)
                 .anyMatch(a -> a.role().equals(assignment.role()));
 
-        if (duplicateActive) throw new IllegalArgumentException("Активное назначение этой роли пользователю уже существует");
+        if (duplicate) {
+            throw new IllegalArgumentException("Active assignment for this role already exists");
+        }
 
         assignments.put(assignment.assignmentId(), assignment);
     }
@@ -55,12 +59,14 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     public List<RoleAssignment> findByUser(User user) {
+        if (user == null) return List.of();
         return assignments.values().stream()
                 .filter(a -> a.user().equals(user))
                 .collect(Collectors.toList());
     }
 
     public List<RoleAssignment> findByRole(Role role) {
+        if (role == null) return List.of();
         return assignments.values().stream()
                 .filter(a -> a.role().equals(role))
                 .collect(Collectors.toList());
@@ -94,7 +100,8 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public boolean userHasPermission(User user, String permissionName, String resource) {
         return getUserPermissions(user).stream()
-                .anyMatch(p -> p.name().equalsIgnoreCase(permissionName) && p.resource().equalsIgnoreCase(resource));
+                .anyMatch(p -> p.name().equalsIgnoreCase(permissionName) &&
+                               p.resource().equalsIgnoreCase(resource));
     }
 
     public Set<Permission> getUserPermissions(User user) {
@@ -108,7 +115,8 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public void revokeAssignment(String assignmentId) {
         RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) throw new IllegalArgumentException("Назначение не найдено");
+        if (assignment == null) throw new IllegalArgumentException("Assignment not found");
+
         if (assignment instanceof PermanentAssignment) {
             ((PermanentAssignment) assignment).revoke();
         } else if (assignment instanceof TemporaryAssignment) {
@@ -118,9 +126,9 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
         RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) throw new IllegalArgumentException("Назначение не найдено");
+        if (assignment == null) throw new IllegalArgumentException("Assignment not found");
         if (!(assignment instanceof TemporaryAssignment)) {
-            throw new IllegalArgumentException("Это не временное назначение");
+            throw new IllegalArgumentException("Not a temporary assignment");
         }
         ((TemporaryAssignment) assignment).extend(newExpirationDate);
     }

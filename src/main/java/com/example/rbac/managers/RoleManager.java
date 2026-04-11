@@ -4,17 +4,20 @@ import com.example.rbac.Role;
 import com.example.rbac.Permission;
 import com.example.rbac.filters.RoleFilter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class RoleManager implements Repository<Role> {
 
-    private final Map<String, Role> rolesById = new HashMap<>();     // ключ — id
-    private final Map<String, Role> rolesByName = new HashMap<>();   // ключ — name
+    private final ConcurrentHashMap<String, Role> rolesById = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Role> rolesByName = new ConcurrentHashMap<>();
 
     @Override
     public void add(Role role) {
-        if (role == null) throw new IllegalArgumentException("Role не может быть null");
-        if (rolesByName.containsKey(role.getName())) throw new IllegalArgumentException("Роль с таким именем уже существует");
+        if (role == null) throw new IllegalArgumentException("Role cannot be null");
+        if (rolesByName.containsKey(role.getName())) {
+            throw new IllegalArgumentException("Role name already exists");
+        }
         rolesById.put(role.getId(), role);
         rolesByName.put(role.getName(), role);
     }
@@ -70,13 +73,13 @@ public class RoleManager implements Repository<Role> {
 
     public void addPermissionToRole(String roleName, Permission permission) {
         Role role = rolesByName.get(roleName);
-        if (role == null) throw new IllegalArgumentException("Роль не найдена");
+        if (role == null) throw new IllegalArgumentException("Role not found");
         role.addPermission(permission);
     }
 
     public void removePermissionFromRole(String roleName, Permission permission) {
         Role role = rolesByName.get(roleName);
-        if (role == null) throw new IllegalArgumentException("Роль не найдена");
+        if (role == null) throw new IllegalArgumentException("Role not found");
         role.removePermission(permission);
     }
 
