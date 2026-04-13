@@ -1,6 +1,7 @@
 package com.example.rbac.commands;
 
 // Импорты менеджеров и моделей
+import com.example.rbac.*;
 import com.example.rbac.managers.*;
 import com.example.rbac.User;
 import com.example.rbac.Role;
