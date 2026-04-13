@@ -69,4 +69,11 @@ public class ReportGenerator {
     public static void exportToFile(String report, String filename) {
         System.out.println("Отчёт сохранён в файл: " + filename);
     }
+    public static String generateUserReportParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        return generateUserReport(userManager, assignmentManager);
+    }
+
+    public static String generatePermissionMatrixParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        return generatePermissionMatrix(userManager, assignmentManager);
+    }
 }

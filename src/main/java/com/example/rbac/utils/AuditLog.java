@@ -85,4 +85,7 @@ public class AuditLog {
         running = false;
         workerThread.interrupt();
     }
+    public void shutdown() {
+        System.out.println("[AuditLog] Аудит-лог остановлен.");
+    }
 }
