@@ -34,7 +34,7 @@ public class AuditLog {
     }
 
     private void processQueue() {
-        while (running) {
+        while (running || !queue.isEmpty()) {
             try {
                 AuditEntry entry = queue.take();
                 synchronized (entries) {
@@ -84,11 +84,6 @@ public class AuditLog {
     public void shutdown() {
         running = false;
         workerThread.interrupt();
-    }
-    public void shutdown() {
-        System.out.println("[AuditLog] Аудит-лог остановлен.");
-    }
-     public void shutdown() {
         System.out.println("[AuditLog] Аудит-лог остановлен.");
     }
 }

@@ -306,7 +306,7 @@ public class CommandRegistry {
             System.out.print("Причина назначения: "); 
             String reason = scanner.nextLine().trim();
 
-            AssignmentMetadata meta = AssignmentMetadata.now(system.getCurrentUser() != null ? system.getCurrentUser().username() : "admin", reason);
+            AssignmentMetadata meta = AssignmentMetadata.now(system.getCurrentUser() != null ? system.getCurrentUser() : "admin", reason);
             
             try {
                 if (typeChoice.equals("1")) {
@@ -482,7 +482,7 @@ public class CommandRegistry {
     private static void registerAsyncCommands(CommandParser parser) {
         parser.registerCommand("report-users-async", "Запустить генерацию отчёта по пользователям в фоне", (scanner, system) -> {
             System.out.println("[ASYNC] Запуск генерации отчёта в фоновом потоке...");
-            String currentUser = system.getCurrentUser() != null ? system.getCurrentUser().username() : "admin";
+            String currentUser = system.getCurrentUser() != null ? system.getCurrentUser() : "admin";
             
             system.getAuditLog().log("REPORT_ASYNC_START", currentUser, "ReportGenerator", "Запущена асинхронная генерация отчёта по пользователям");
 
@@ -502,7 +502,7 @@ public class CommandRegistry {
             String filename = rawName.isEmpty() ? "rbac_data.json" : rawName;
 
             System.out.println("[ASYNC] Запуск сохранения в фоновом потоке...");
-            String currentUser = system.getCurrentUser() != null ? system.getCurrentUser().username() : "admin";
+            String currentUser = system.getCurrentUser() != null ? system.getCurrentUser() : "admin";
             system.getAuditLog().log("SAVE_ASYNC_START", currentUser, filename, "Запущено асинхронное сохранение данных");
 
             Future<String> future = system.getBackgroundExecutor().submit(() -> {
