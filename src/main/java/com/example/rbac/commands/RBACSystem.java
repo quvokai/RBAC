@@ -12,10 +12,7 @@ import com.example.rbac.TemporaryAssignment;
 // Импорты утилит
 import com.example.rbac.utils.AuditLog;
 import com.example.rbac.utils.ReportGenerator;
-import com.example.rbac.utils.BackgroundExecutor; // <-- Добавлено
-import com.example.rbac.utils.AuditLog;
 import com.example.rbac.utils.BackgroundExecutor;
-import com.example.rbac.*;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,11 +25,9 @@ public class RBACSystem {
     private final RoleManager roleManager = new RoleManager();
     private final AssignmentManager assignmentManager = new AssignmentManager();
     private final AuditLog auditLog = new AuditLog();
-    // Инициализируем BackgroundExecutor (убедитесь, что у него есть public конструктор или используйте Singleton)
-    private final BackgroundExecutor backgroundExecutor = new BackgroundExecutor();
     private final BackgroundExecutor backgroundExecutor = new BackgroundExecutor();
     
-    // ScheduledExecutorService для периодических задач (feature/schedule-tasks)
+    // ScheduledExecutorService для периодических задач
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean schedulerRunning = false;
     private static final long SCHEDULER_DELAY_SECONDS = 10;
@@ -40,15 +35,11 @@ public class RBACSystem {
 
     private String currentUser = "system";
 
-    // Геттеры для менеджеров
     // ===== Геттеры =====
     public UserManager getUserManager() { return userManager; }
     public RoleManager getRoleManager() { return roleManager; }
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
     public AuditLog getAuditLog() { return auditLog; }
-    
-    // --- ЭТОГО МЕТОДА НЕ ХВАТАЛО ---
-    public BackgroundExecutor getBackgroundExecutor() { return backgroundExecutor; }
     public BackgroundExecutor getBackgroundExecutor() { return backgroundExecutor; }
 
     public void setCurrentUser(String username) { this.currentUser = username; }
@@ -56,7 +47,6 @@ public class RBACSystem {
 
     // ===== Инициализация =====
     public void initialize() {
-        // Пример инициализации базовых данных
         // Базовые права
         Permission readUsers = new Permission("READ", "users", "Просмотр пользователей");
         Permission writeUsers = new Permission("WRITE", "users", "Создание/редактирование пользователей");
@@ -86,13 +76,12 @@ public class RBACSystem {
         assignmentManager.add(adminAssignment);
 
         auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
-        auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
 
         // Запуск периодической задачи
         startScheduledTasks();
     }
 
-    // ===== Периодические задачи (feature/schedule-tasks) =====
+    // ===== Периодические задачи =====
     private void startScheduledTasks() {
         if (schedulerRunning) return;
         schedulerRunning = true;
@@ -102,14 +91,12 @@ public class RBACSystem {
                 processExpiredAssignments();
                 logPeriodicStatistics();
             } catch (Exception e) {
-                auditLog.log("SCHEDULER_ERROR", "scheduler", "RBACSystem", 
-                    "Ошибка: " + e.getMessage());
+                auditLog.log("SCHEDULER_ERROR", "scheduler", "RBACSystem", "Ошибка: " + e.getMessage());
                 System.err.println("[Scheduler] Ошибка: " + e.getMessage());
             }
         }, SCHEDULER_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
 
-        auditLog.log("SCHEDULER_STARTED", "system", "RBACSystem", 
-            "Периодическая задача запущена (интервал: " + SCHEDULER_PERIOD_SECONDS + " сек)");
+        auditLog.log("SCHEDULER_STARTED", "system", "RBACSystem", "Периодическая задача запущена (интервал: " + SCHEDULER_PERIOD_SECONDS + " сек)");
     }
 
     // Обработка истёкших временных назначений
@@ -130,9 +117,7 @@ public class RBACSystem {
                         assignmentManager.revokeAssignment(temp.assignmentId());
                     }
                     expiredCount++;
-                    auditLog.log("ASSIGNMENT_EXPIRED", "scheduler", 
-                        "TemporaryAssignment:" + temp.assignmentId(),
-                        "Автоматически деактивировано");
+                    auditLog.log("ASSIGNMENT_EXPIRED", "scheduler", "TemporaryAssignment:" + temp.assignmentId(), "Автоматически деактивировано");
                 }
             }
         }
@@ -150,7 +135,6 @@ public class RBACSystem {
             assignmentManager.getActiveAssignments().size()
         );
         auditLog.log("PERIODIC_STATS", "scheduler", "RBACSystem", stats);
-        System.out.println("[Scheduler] " + stats);
     }
 
     // ===== Статистика =====
@@ -165,14 +149,6 @@ public class RBACSystem {
         return sb.toString();
     }
 
-    public void shutdown() {
-        System.out.println("Завершение работы системы...");
-        backgroundExecutor.shutdown();
-        auditLog.shutdown();
-        System.out.println("Система остановлена.");
-    }
-}
-{
     // ===== Корректное завершение =====
     public void shutdown() {
         System.out.println("Завершение работы системы...");
