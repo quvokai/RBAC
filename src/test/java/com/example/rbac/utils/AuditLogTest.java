@@ -19,6 +19,8 @@ public class AuditLogTest {
         auditLog.log("ADD_USER", "admin", "user123", "Детали");
         auditLog.log("UPDATE_ROLE", "system", "role1", "Изменено");
 
+        auditLog.flush(); // Ждем, пока фоновый поток переложит данные из очереди в список
+
         List<AuditLog.AuditEntry> entries = auditLog.getAll();
         assertEquals(2, entries.size());
         assertEquals("ADD_USER", entries.get(0).action());
@@ -30,6 +32,8 @@ public class AuditLogTest {
         auditLog.log("ACTION2", "system", "target2", "det2");
         auditLog.log("ACTION3", "admin", "target3", "det3");
 
+        auditLog.flush(); // Ждем завершения записи
+
         List<AuditLog.AuditEntry> byAdmin = auditLog.getByPerformer("admin");
         assertEquals(2, byAdmin.size());
     }
@@ -37,8 +41,10 @@ public class AuditLogTest {
     @Test
     void testGetByAction() {
         auditLog.log("ADD", "admin", "target1", "det1");
-        auditLog.log("DELETE", "system", "target2", "det2");
-        auditLog.log("ADD", "admin", "target3", "det3");
+        auditLog.log("UPDATE", "admin", "target2", "det2");
+        auditLog.log("ADD", "system", "target3", "det3");
+
+        auditLog.flush(); // Ждем завершения записи
 
         List<AuditLog.AuditEntry> adds = auditLog.getByAction("ADD");
         assertEquals(2, adds.size());
