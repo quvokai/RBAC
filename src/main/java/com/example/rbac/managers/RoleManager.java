@@ -16,7 +16,7 @@ public class RoleManager implements Repository<Role> {
     public void add(Role role) {
         if (role == null) throw new IllegalArgumentException("Role cannot be null");
         if (rolesByName.containsKey(role.getName())) {
-            throw new IllegalArgumentException("Role name already exists");
+            throw new IllegalArgumentException("Роль с таким именем уже существует");
         }
         rolesById.put(role.getId(), role);
         rolesByName.put(role.getName(), role);

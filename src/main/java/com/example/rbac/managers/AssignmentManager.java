@@ -12,25 +12,25 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     private final ConcurrentHashMap<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
 
     @Override
-    public void add(RoleAssignment assignment) {
-        if (assignment == null) throw new IllegalArgumentException("Assignment cannot be null");
+public void add(RoleAssignment assignment) {
+    if (assignment == null) throw new IllegalArgumentException("Assignment cannot be null");
 
-        if (assignments.containsKey(assignment.assignmentId())) {
-            throw new IllegalArgumentException("Assignment ID already exists");
-        }
-
-        // Проверка дублирования активной роли
-        boolean duplicate = assignments.values().stream()
-                .filter(a -> a.user().equals(assignment.user()))
-                .filter(RoleAssignment::isActive)
-                .anyMatch(a -> a.role().equals(assignment.role()));
-
-        if (duplicate) {
-            throw new IllegalArgumentException("Active assignment for this role already exists");
-        }
-
-        assignments.put(assignment.assignmentId(), assignment);
+    if (assignments.containsKey(assignment.assignmentId())) {
+        throw new IllegalArgumentException("Assignment ID уже существует");
     }
+
+    // Сравниваем по именам/логинам, это 100% сработает
+    boolean duplicate = assignments.values().stream()
+            .filter(RoleAssignment::isActive)
+            .anyMatch(a -> a.user().username().equals(assignment.user().username()) && 
+                           a.role().getName().equals(assignment.role().getName()));
+
+    if (duplicate) {
+        throw new IllegalArgumentException("Активное назначение этой роли уже существует");
+    }
+
+    assignments.put(assignment.assignmentId(), assignment);
+}
 
     @Override
     public boolean remove(RoleAssignment assignment) {

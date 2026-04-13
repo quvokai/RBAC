@@ -14,7 +14,7 @@ public class UserManager implements Repository<User> {
     public void add(User user) {
         if (user == null) throw new IllegalArgumentException("User cannot be null");
         if (users.containsKey(user.username())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new IllegalArgumentException("Пользователь с таким логином уже существует");
         }
         users.put(user.username(), user);
     }
