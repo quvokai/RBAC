@@ -34,12 +34,30 @@ public class AuditLog {
     }
 
     private void processQueue() {
+        // Цикл работает пока система активна ИЛИ в очереди есть сообщения
         while (running || !queue.isEmpty()) {
             try {
-                AuditEntry entry = queue.take();
-                synchronized (entries) {
-                    entries.add(entry);
+                AuditEntry entry = queue.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                if (entry != null) {
+                    synchronized (entries) {
+                        entries.add(entry);
+                    }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Ждет завершения обработки всех текущих сообщений в очереди.
+     * Необходимо для корректного прохождения нагрузочных тестов.
+     */
+    public void flush() {
+        while (!queue.isEmpty()) {
+            try {
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
